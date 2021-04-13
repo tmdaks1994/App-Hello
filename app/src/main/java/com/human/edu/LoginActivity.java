@@ -2,6 +2,7 @@ package com.human.edu;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -9,9 +10,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashMap;
+
+import core.AsyncResponse;
+import core.PostResponseAsyncTask;
+
 public class LoginActivity extends AppCompatActivity {
     Button btnLogin;
-
+    EditText editTextID, editTextPassword;
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -46,16 +52,40 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         btnLogin = findViewById(R.id.btnLogin);
+        editTextID = findViewById(R.id.editTextID);
+        editTextPassword = findViewById(R.id.editTextPassword);
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText editTextID, editTextPassword;
-                editTextID = findViewById(R.id.editTextID);
-                editTextPassword = findViewById(R.id.editTextPassword);
+
+                //스프링으로 보낼 데이터를 해시맵 타입을 저장
+                HashMap postDataParams = new HashMap();
+                postDataParams.put("txtUsername",editTextID.getText().toString());
+                postDataParams.put("txtPassword",editTextPassword.getText().toString());
+                //스프링 앱주소 지정
+                String requestUrl = "http://192.168.25.14:8080/android/login";
+                //jsp의 Ajax와 같은 역할의 AsyncTask 클래스 사용
+                PostResponseAsyncTask readTask = new PostResponseAsyncTask(LoginActivity.this, postDataParams, new AsyncResponse(){
+
+                    @Override
+                    public void processFinish(String output) {
+                        Toast.makeText(LoginActivity.this, output+"디버그",Toast.LENGTH_SHORT).show();
+                        String jsonString = output.substring(output.indexOf('{'),output.indexOf('}'));
+                        if(!jsonString.equals("{}")){
+                            Log.i("디버그",jsonString);
+                        }else{
+                            Toast.makeText(LoginActivity.this, "로그인 실패",Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+                readTask.execute(requestUrl);
+                /*
+                //Intent는 안드로이드맵에서 액티비티간 데이터를 전송하는 클래스
                 Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
                 mainIntent.putExtra("editTextId", editTextID.getText().toString());
                 mainIntent.putExtra("editTextPassword", editTextPassword.getText().toString());
                 startActivity(mainIntent);
+                */
             }
         });
     }
